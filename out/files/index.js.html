@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>index.js</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-elements">Elements</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/init.html">init</a></li>
+                                <li><a href="../classes/Scrapper.html">Scrapper</a></li>
+                            </ul>
+                
+                                <ul id="api-elements" class="apis elements">
+                                    <li><a href="../elements/generateCSV().html">&lt;generateCSV()&gt;</a></li>
+                                    <li><a href="../elements/generateTokens().html">&lt;generateTokens()&gt;</a></li>
+                                    <li><a href="../elements/getCookies().html">&lt;getCookies()&gt;</a></li>
+                                    <li><a href="../elements/init().html">&lt;init()&gt;</a></li>
+                                    <li><a href="../elements/loadContactConnections().html">&lt;loadContactConnections()&gt;</a></li>
+                                    <li><a href="../elements/loadDataMaster().html">&lt;loadDataMaster()&gt;</a></li>
+                                    <li><a href="../elements/login().html">&lt;login()&gt;</a></li>
+                                    <li><a href="../elements/processCookies().html">&lt;processCookies()&gt;</a></li>
+                                </ul>
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1 class="file-heading">File: index.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+const fs = require(&#x27;fs&#x27;);
+const xl = require(&#x27;excel4node&#x27;);
+const fetch = require(&#x27;node-fetch&#x27;);
+const Promise = require(&#x27;bluebird&#x27;);
+const puppeteer = require(&#x27;puppeteer&#x27;);
+const parseObject = require(&#x27;./parseObjet&#x27;);
+
+const modelScrapProfiles = {
+  profileName: false,
+  name: false,
+  firstName: false,
+  lastName: false,
+  industryName: false,
+  locationName: false,
+  geoLocationName: false,
+  student: false,
+  entityUrn: false,
+  occupation: false,
+  publicIdentifier: false,
+  headline: false,
+  profileId: false,
+  trackingId: false,
+  profession: false,
+  href: false,
+  summary: false,
+};
+
+/**
+ * A utility that brokers HTTP requests...
+ *
+ * @class Scrapper
+ * @constructor Username and Password
+ */
+class Scrapper {
+  constructor(username, password) {
+    this.page = null;
+    this.browser = null;
+    this.accessToken = {};
+
+    this.username = username;
+    this.password = password;
+
+    this.DICT = [
+      &#x27;bcookie&#x27;,
+      &#x27;bscookie&#x27;,
+      &#x27;spectroscopyId&#x27;,
+      &#x27;timezone&#x27;,
+      &#x27;li_rm&#x27;,
+      &#x27;li_at&#x27;,
+      &#x27;liap&#x27;,
+      &#x27;JSESSIONID&#x27;,
+      &#x27;lidc&#x27;,
+      &#x27;UserMatchHistory&#x27;,
+    ];
+
+    this._linkedin = &#x27;https://www.linkedin.com&#x27;;
+    this._initialUrl = &#x60;${this._linkedin}/checkpoint/rm/sign-in-another-account?fromSignIn=true&amp;trk=guest_homepage-basic_nav-header-signin&#x60;;
+    this._scrapeUrl = &#x60;${this._linkedin}/voyager/api/identity/profiles&#x60;;
+    this._urlConnections =
+      &#x27;https://www.linkedin.com/mynetwork/invite-connect/connections/&#x27;;
+  }
+
+  async _createNewPage() {
+    const pg = await this.browser.newPage();
+    await pg.setViewport({ width: 1040, height: 768 });
+    return pg;
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono inicia o projeto.
+   *
+   * @class init
+   * @constructor
+   */
+  async init() {
+    console.info(&#x27;Iniciando...&#x27;);
+    try {
+      this.browser = await puppeteer.launch({
+        dumpio: true,
+        headless: false,
+        ignoreDefaultArgs: [&#x27;--disable-extensions&#x27;],
+        ignoreHTTPSErrors: true,
+        args: [
+          &#x27;--fast-start&#x27;,
+          &#x27;--disable-gpu&#x27;,
+          &#x27;--disable-dev-shm-usage&#x27;,
+          &#x27;--disable-setuid-sandbox&#x27;,
+          &#x27;--no-first-run&#x27;,
+          &#x27;--no-sandbox&#x27;,
+          &#x27;--no-zygote&#x27;,
+          &#x27;--window-size=1040,768&#x27;,
+        ],
+      });
+      this.page = await this._createNewPage();
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Init had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo acessar a página iniciar e efetuar o login através dos dados que o arquivo .env contém.
+   *
+   * @method login
+   * @return
+   */
+  async login() {
+    console.info(&#x27;Initial Login...&#x27;);
+    try {
+      await this.page.goto(this._initialUrl, { waitUntil: &#x27;load&#x27; });
+      await this.page.type(&#x27;#username&#x27;, this.username);
+      await this.page.type(&#x27;#password&#x27;, this.password);
+
+      await this.page.keyboard.press(&#x27;Enter&#x27;);
+      await this.page.waitForNavigation();
+      console.info(&#x27;The second step has been done...&#x27;);
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Login had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo &#x27;pegar&#x27; os cookies de navegação em tempo de execução.
+   *
+   * @method getCookies
+   * @return {}
+   */
+  async getCookies() {
+    console.info(&#x27;Extraindo cookies...&#x27;, this.DICT);
+    try {
+      const client = await this.page.target().createCDPSession();
+      const sig = await client.send(&#x27;Network.getAllCookies&#x27;);
+      this.cookies = sig?.cookies;
+      console.info(&#x27;The third step has been done...&#x27;);
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Get Cookies had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo &#x27;processar&#x27; os cookies de navegação que foram pegos no método acima.
+   *
+   * @method getCookies
+   * @return {}
+   */
+  async processCookies() {
+    try {
+      if (!this.cookies) {
+        console.info(&#x27;Cookies não encontrados. Encerrando...&#x27;);
+        await this.page.close();
+        process.exit(1);
+      }
+
+      console.info(&#x27;Processando cookies...&#x27;);
+      const FN = (k) =&gt; this.DICT.includes(k.name);
+      this.cookies = this.cookies.filter(FN);
+      console.info(&#x27;The fourth step has been done...&#x27;);
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Process Cookies Cookies had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo &#x27;gerar&#x27; os tokens que foram processados pelos cookies anteriormente.
+   *
+   * @method generateTokens
+   * @return {}
+   */
+  async generateTokens() {
+    console.info(&#x27;The tokens are generating...and the magic happens...&#x27;);
+    try {
+      const str = this.cookies.reduce((acc, item) =&gt; {
+        return &#x60;${acc};${item.name}=${item.value}&#x60;;
+      }, &#x27;&#x27;);
+
+      const token = this.cookies.find((k) =&gt; k.name === &#x27;JSESSIONID&#x27;)?.value;
+
+      this.accessToken = {
+        cookie: str.slice(1),
+        token: token.replace(/[&quot;]/gi, &#x27;&#x27;),
+      };
+      console.info(&#x27;The fifth step has been done...&#x27;);
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Generate Tokens had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo pegar os dados e as informações da página inicial do usuário.
+   *
+   * @method loadDataMaster
+   * @return {...profile,...info, profileId: info.entityUrn} Este método retorna o profile e todas as informações que a página contém.
+   */
+  async loadDataMaster() {
+    console.log(&#x27;Carregando dados do master&#x27;);
+    try {
+      const page = await this._createNewPage();
+      await Promise.all([
+        page.waitForNavigation(),
+        page.goto(this._urlConnections, {
+          waitUntil: [&#x27;load&#x27;, &#x27;domcontentloaded&#x27;],
+          timeout: 0,
+        }),
+      ]);
+      await page.waitForTimeout(600);
+      await this.__autoScroll(page);
+
+      //pega todos os hrefs
+      this.masterHref = await page.evaluate(() =&gt;
+        Array.from(
+          document.querySelectorAll(
+            &#x27;#main div section div ul li a.ember-view.mn-connection-card__picture&#x27;
+          ),
+          (a) =&gt; a.getAttribute(&#x27;href&#x27;).replace(/\/+$/g, &#x27;&#x27;).replace(&#x27;/in/&#x27;, &#x27;&#x27;)
+        )
+      );
+
+      this.masterName = await page.evaluate(() =&gt;
+        Array.from(
+          document.querySelectorAll(
+            &#x27;#main div section div ul li span.mn-connection-card__name&#x27;
+          ),
+          (a) =&gt; a.innerText
+        )
+      );
+
+      await page.waitForTimeout(600);
+
+      this.listContactMaster = await Promise.all(
+        this.masterHref.map(async (d, i) =&gt; {
+          const profile = {
+            profileName: d,
+            name: this.masterName[i],
+          };
+          const info = await this.scrapProfile(profile.profileName);
+          return {
+            ...profile,
+            ...info,
+            profileId: info.entityUrn
+              .toString()
+              .replace(&#x27;urn:li:fs_profile:&#x27;, &#x27;&#x27;),
+          };
+        })
+      );
+      console.info(&#x27;The sixth step has been done...&#x27;);
+      page.close();
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;Generate Tokens had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo pegar todos as conexões dos usuários a partir do usuário logado.
+   *
+   * @method loadContactConnections
+   * @return {}
+   */
+  async loadContactConnections() {
+    console.info(&#x27;loading the contacts...&#x27;);
+    let contacts = [];
+    try {
+      for (const key in this.listContactMaster) {
+        let contactMaster = this.listContactMaster[key];
+        const page = await this._createNewPage();
+
+        // direciona para pagina de conexoes
+        const url = &#x60;https://www.linkedin.com/search/results/people/?connectionOf=%5B${contactMaster.profileId}%22%5D&amp;network=%5B%22F%22%2C%22S%22%5D&amp;origin=MEMBER_PROFILE_CANNED_SEARCH&amp;sid=%3B_.&#x60;;
+
+        await Promise.all([
+          page.waitForNavigation(),
+          page.goto(url.replace(/\&quot;/g, &#x27;&#x27;), {
+            waitUntil: [&#x27;load&#x27;, &#x27;domcontentloaded&#x27;],
+            timeout: 0,
+          }),
+        ]);
+
+        await this.__autoScroll(page);
+
+        // total de conexoes do contato
+        let buttonNextElm = await page.$(
+          &#x27;#main &gt; div &gt; div &gt; div.artdeco-card &gt; div &gt; div .artdeco-pagination__button--next&#x27;
+        );
+
+        // total de conexoes do contato
+        let countConections = await page.evaluate(() =&gt;
+          Array.from(
+            document.querySelectorAll(&#x27;#main &gt; div &gt; div &gt; div.pb2&#x27;),
+            (el) =&gt; el.innerText.replace(/\D+/g, &#x27;&#x27;)
+          )
+        );
+
+        const elements = await page.waitForSelector(&#x27;#main&#x27;, {
+          waitUntil: [&#x27;load&#x27;, &#x27;domcontentloaded&#x27;],
+          timeout: 0,
+        });
+
+        let countRegistryPage = await elements.$$eval(
+          &#x27;div &gt; div &gt; div &gt; ul.reusable-search__entity-results-list li.reusable-search__result-container span.entity-result__title-text &gt; a.app-aware-link span span[aria-hidden]&#x27;,
+          (el) =&gt; el.map((x) =&gt; x.innerText)
+        );
+
+        // descobre a ultima pagina
+        const countPagesConections =
+          countConections &gt; 0 ? Math.round(countConections / 10) : 1;
+
+        let erroCount = 0;
+        const lengthFor =
+          countRegistryPage.length &lt; 10 ? 1 : countPagesConections;
+
+        let contactOld = {};
+
+        for (let i = 0; i &lt; lengthFor; i++) {
+          try {
+            const listContactTemp = await this.loadContactConnectionsData(page);
+            if (contactOld[0]?.profileName == listContactTemp[0]?.profileName) {
+              console.log(&#x27;contact duplicate&#x27;, listContactTemp);
+              break;
+            }
+
+            for (const cntKey in listContactTemp) {
+              const info = await this.scrapProfile(
+                listContactTemp[cntKey].profileName
+              );
+              await this.saveContact(listContactTemp[cntKey].profileName, {
+                contactMaster,
+                ...listContactTemp[cntKey],
+                ...info,
+              });
+            }
+
+            contactOld = listContactTemp[0];
+            contacts = [...contacts, ...listContactTemp];
+
+            if (i &lt; lengthFor) {
+              try {
+                await page.waitForTimeout(600);
+                await buttonNextElm.click();
+
+                await page.waitForTimeout(600);
+                await this.__autoScroll(page);
+
+                await this.__autoScroll(page);
+
+                // total de conexoes do contato
+                buttonNextElm = await page.$(
+                  &#x27;#main &gt; div &gt; div &gt; div.artdeco-card &gt; div &gt; div .artdeco-pagination__button--next&#x27;
+                );
+
+                const elements = await page.waitForSelector(&#x27;#main&#x27;, {
+                  waitUntil: [&#x27;load&#x27;, &#x27;domcontentloaded&#x27;],
+                  timeout: 0,
+                });
+
+                countRegistryPage = await elements.$$eval(
+                  &#x27;div &gt; div &gt; div &gt; ul.reusable-search__entity-results-list li.reusable-search__result-container span.entity-result__title-text &gt; a.app-aware-link span span[aria-hidden]&#x27;,
+                  (el) =&gt; el.map((x) =&gt; x.innerText)
+                );
+
+                if (!countRegistryPage.length) break;
+                await page.waitForTimeout(1000);
+                continue;
+              } catch (error) {
+                console.log(2222, error);
+                break;
+              }
+            }
+
+            break;
+          } catch (error) {
+            erroCount = +1;
+            console.log(&#x27;trycatch getDataConections::for&#x27;, error);
+            if (erroCount &gt; 5) break;
+          }
+        }
+
+        this.listContactMaster[key] = {
+          ...contactMaster.contacts,
+        };
+
+        await page.waitForTimeout(1200);
+        page.close();
+      }
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;load contact connections had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo a partir da pasta database gerar o arquivo csv formatado.
+   *
+   * @method generateCSV
+   * @return {}
+   */
+  async generateCSV() {
+    try {
+      const wb = new xl.Workbook();
+      const list = await this.listarArquivosDoDiretorio(&#x27;./database&#x27;);
+      const ws = wb.addWorksheet(&#x27;Software...&#x27;);
+
+      const headingColumnNames = [
+        &#x27;contactMaster&#x27;,
+        &#x27;name&#x27;,
+        &#x27;profession&#x27;,
+        &#x27;location&#x27;,
+        &#x27;href&#x27;,
+        &#x27;profileName&#x27;,
+        &#x27;firstName&#x27;,
+        &#x27;lastName&#x27;,
+        &#x27;industryName&#x27;,
+        &#x27;geoLocationName&#x27;,
+        &#x27;student&#x27;,
+        &#x27;entityUrn&#x27;,
+        &#x27;headline&#x27;,
+        &#x27;summary&#x27;,
+        &#x27;occupation&#x27;,
+        &#x27;publicIdentifier&#x27;,
+        &#x27;trackingId&#x27;,
+        &#x27;pictures&#x27;,
+      ];
+
+      const cell = (row, col, value) =&gt; {
+        let temp = value;
+        if (typeof value === &#x27;boolean&#x27;) {
+          temp = String(value);
+        } else if (typeof value === &#x27;object&#x27;) {
+          temp = JSON.stringify(value);
+        }
+        ws.cell(row, col).string(temp);
+      };
+      list.forEach((record, row) =&gt; {
+        headingColumnNames.forEach((heading, column) =&gt; {
+          cell(row + 1, column + 1, record[heading]);
+        });
+      });
+      await wb.write(&#x27;./exports/ArquivoExcel.xlsx&#x27;);
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;generateCSV had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como tem como objetivo o autoScroll da página web.
+   *
+   * @method __autoScroll
+   * @param {Object} page Objeto de navegação.
+   * @return {page.waitForTimeout} Este método retorna um determinado período e faz o scroll durante o mesmo.
+   *
+   */
+  async __autoScroll(page) {
+    await page.waitForTimeout(500);
+    await page.evaluate(async () =&gt; {
+      await new Promise((resolve, reject) =&gt; {
+        var totalHeight = 0;
+        var distance = 100;
+        var timer = setInterval(() =&gt; {
+          var scrollHeight = document.body.scrollHeight;
+          window.scrollBy(0, distance);
+          totalHeight += distance;
+
+          if (totalHeight &gt;= scrollHeight) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 100);
+      });
+    });
+    await page.waitForTimeout(500);
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo &#x27;montar&#x27; a configuração inicial do webcrawler.
+   *
+   * @method scrapProfile
+   * @param {Object} slug Objeto de configuração
+   * @return {JSON} Este método retorna a imagem em um vetor e dois modelos já predeterminado do perfil.
+   *
+   */
+  async scrapProfile(slug) {
+    try {
+      const url = &#x60;${this._scrapeUrl}/${slug}&#x60;;
+      const response = await fetch(url, {
+        method: &#x27;get&#x27;,
+        headers: {
+          &#x27;Content-Type&#x27;: &#x27;application/json&#x27;,
+          cookie: this.accessToken?.cookie,
+          &#x27;csrf-token&#x27;: this.accessToken?.token,
+        },
+      });
+      const data = await response.json();
+
+      const dataValue = {
+        ...parseObject.parse(modelScrapProfiles, data),
+        ...parseObject.parse(modelScrapProfiles, data?.miniProfile),
+        pictures: {
+          rootUrl:
+            data?.miniProfile?.picture[&#x27;com.linkedin.common.VectorImage&#x27;]
+              .rootUrl,
+          values: data?.miniProfile?.picture[
+            &#x27;com.linkedin.common.VectorImage&#x27;
+          ].artifacts.map((m) =&gt; m.fileIdentifyingUrlPathSegment),
+        },
+      };
+
+      return dataValue;
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;scrapProfile had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como objetivo &#x27;montar&#x27; a configuração inicial do webcrawler.
+   *
+   * @method listarArquivosDoDiretorio
+   * @param {diretorio} diretorio Diretorio dos arquivos gerados.
+   * @return {arquivos} Este método retorna uma lista de arquivos em um array.
+   *
+   */
+  async listarArquivosDoDiretorio(diretorio) {
+    try {
+      let arquivos = [];
+      let listaDeArquivos = await fs.readdirSync(diretorio);
+
+      for (let k in listaDeArquivos) {
+        let stat = await fs.statSync(diretorio + &#x27;/&#x27; + listaDeArquivos[k]);
+        if (stat.isDirectory())
+          await listarArquivosDoDiretorio(
+            diretorio + &#x27;/&#x27; + listaDeArquivos[k],
+            arquivos
+          );
+        else {
+          let _return = await fs.readFileSync(
+            diretorio + &#x27;/&#x27; + listaDeArquivos[k],
+            { encoding: &#x27;utf8&#x27;, flag: &#x27;r&#x27; }
+          );
+          arquivos.push(JSON.parse(_return));
+        }
+      }
+      return arquivos;
+    } catch (error) {
+      return {
+        err: true,
+        data: {
+          error,
+          errorMessage: &#x60;listarArquivosDoDiretorio had has an error&#x60;,
+        },
+      };
+    }
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem como salvar na pasta database as informações do usuário em um arquivo .json.
+   *
+   * @method saveContact
+   * @param {name} String Nome do usuário.
+   * @param {value} JSON Conteúdo em JSON.
+   * @return {}
+   *
+   */
+  saveContact(name, value) {
+    const fileName = &#x60;database/${name}.json&#x60;
+      .replace(&#x27;\\&#x27;, &#x27;/&#x27;)
+      .replace(&#x27;-&#x27;, &#x27;&#x27;);
+
+    fs.writeFile(
+      fileName,
+      JSON.stringify(value, &#x27; &#x27;, 4),
+      &#x27;utf8&#x27;,
+      function (err) {
+        if (err) {
+          console.log(
+            &#x27;Some error occured - file either not saved or corrupted file saved.&#x27;
+          );
+        } else {
+          console.log(&quot;It&#x27;s saved!&quot;, name);
+        }
+      }
+    );
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem objetivo &#x27;montar&#x27; as conexões do usuário.
+   *
+   * @method loadContactConnectionsData
+   * @param {Object} page Objeto de navegação.
+   * @return {contacts}   Este método retorna um JSON contendo as conexões do usuário formatado .
+   *
+   */
+  async loadContactConnectionsData(page) {
+    await page.waitForTimeout(600);
+    // seleciona card da lista inteira de conexoes do contato
+    const cardConections = await page.waitForSelector(
+      &#x27;#main &gt; div &gt; div &gt; div &gt; ul.reusable-search__entity-results-list&#x27;,
+      {
+        waitUntil: [&#x27;load&#x27;, &#x27;domcontentloaded&#x27;],
+        timeout: 0,
+      }
+    );
+
+    const childContactHref = await cardConections.$$eval(
+      &#x27;div ul li div &gt; div &gt; div &gt; a.app-aware-link&#x27;,
+      (el) =&gt; el.map((x) =&gt; x.getAttribute(&#x27;href&#x27;).replace(/\?.*/g, &#x27;&#x27;))
+    );
+
+    const childContactName = await cardConections.$$eval(
+      &#x27;li.reusable-search__result-container span.entity-result__title-text &gt; a.app-aware-link span span[aria-hidden]&#x27;,
+      (el) =&gt; el.map((x) =&gt; x.innerText)
+    );
+
+    const childContactProf = await cardConections.$$eval(
+      &#x27;li.reusable-search__result-container &gt; div &gt; div &gt; div &gt; div &gt; div &gt; div .entity-result__primary-subtitle&#x27;,
+      (el) =&gt; el.map((x) =&gt; x.innerText)
+    );
+
+    const childContactLocation = await cardConections.$$eval(
+      &#x27;li.reusable-search__result-container &gt; div &gt; div &gt; div &gt; div &gt; div &gt; div .entity-result__secondary-subtitle&#x27;,
+      (el) =&gt; el.map((x) =&gt; x.innerText)
+    );
+
+    const contacts = [
+      ...childContactName.map((d, i) =&gt; ({
+        name: d,
+        profession: childContactProf[i],
+        location: childContactLocation[i],
+        href: childContactHref[i],
+        profileName: childContactHref[i].replace(
+          &#x27;https://www.linkedin.com/in/&#x27;,
+          &#x27;&#x27;
+        ),
+      })),
+    ];
+
+    await page.waitForTimeout(600);
+    return contacts;
+  }
+
+  /**
+   * Descrição do método. Este método assíncrono tem objetivo executar o projeto.
+   *
+   * @method loadContactConnectionsData
+   * @element init()
+   * @element login()
+   * @element getCookies()
+   * @element processCookies()
+   * @element generateTokens()
+   * @element loadDataMaster()
+   * @element loadContactConnections()
+   * @element generateCSV()
+   * @return {}
+   *
+   */
+  async execute() {
+    console.info(&#x27;\n The software has been started!&#x27;);
+
+    await this.init();
+    await this.login();
+    await this.getCookies();
+    await this.processCookies();
+    await this.generateTokens();
+    await this.loadDataMaster();
+    await this.loadContactConnections();
+    await this.generateCSV();
+
+    console.info(&#x27;\n Isso é tudo, pessoal!&#x27;);
+  }
+}
+const LG = process.env.USER_LOG;
+const PW = process.env.USER_PASS;
+return new Scrapper(LG, PW).execute();
+
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

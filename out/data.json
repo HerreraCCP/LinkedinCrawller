@@ -1,0 +1,265 @@
+{
+    "project": {},
+    "files": {
+        "index.js": {
+            "name": "index.js",
+            "modules": {},
+            "classes": {
+                "Scrapper": 1,
+                "init": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        }
+    },
+    "modules": {},
+    "classes": {
+        "Scrapper": {
+            "name": "Scrapper",
+            "shortname": "Scrapper",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "index.js",
+            "line": 28,
+            "description": "A utility that brokers HTTP requests...",
+            "is_constructor": 1
+        },
+        "init": {
+            "name": "init",
+            "shortname": "init",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "index.js",
+            "line": 69,
+            "description": "Descrição do método. Este método assíncrono inicia o projeto.",
+            "is_constructor": 1
+        }
+    },
+    "elements": {
+        "init()": {
+            "name": "init()",
+            "attributes": [],
+            "file": "index.js",
+            "line": 689,
+            "description": "Descrição do método. Este método assíncrono tem objetivo executar o projeto.",
+            "itemtype": "method",
+            "return": {
+                "description": ""
+            }
+        },
+        "login()": {
+            "name": "login()",
+            "attributes": []
+        },
+        "getCookies()": {
+            "name": "getCookies()",
+            "attributes": []
+        },
+        "processCookies()": {
+            "name": "processCookies()",
+            "attributes": []
+        },
+        "generateTokens()": {
+            "name": "generateTokens()",
+            "attributes": []
+        },
+        "loadDataMaster()": {
+            "name": "loadDataMaster()",
+            "attributes": []
+        },
+        "loadContactConnections()": {
+            "name": "loadContactConnections()",
+            "attributes": []
+        },
+        "generateCSV()": {
+            "name": "generateCSV()",
+            "attributes": []
+        }
+    },
+    "classitems": [
+        {
+            "file": "index.js",
+            "line": 106,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo acessar a página iniciar e efetuar o login através dos dados que o arquivo .env contém.",
+            "itemtype": "method",
+            "name": "login",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 133,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo 'pegar' os cookies de navegação em tempo de execução.",
+            "itemtype": "method",
+            "name": "getCookies",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 157,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo 'processar' os cookies de navegação que foram pegos no método acima.",
+            "itemtype": "method",
+            "name": "getCookies",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 186,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo 'gerar' os tokens que foram processados pelos cookies anteriormente.",
+            "itemtype": "method",
+            "name": "generateTokens",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 217,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo pegar os dados e as informações da página inicial do usuário.",
+            "itemtype": "method",
+            "name": "loadDataMaster",
+            "return": {
+                "description": "Este método retorna o profile e todas as informações que a página contém.",
+                "type": "...profile,...info, profileId: info.entityUrn"
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 287,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo pegar todos as conexões dos usuários a partir do usuário logado.",
+            "itemtype": "method",
+            "name": "loadContactConnections",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 429,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo a partir da pasta database gerar o arquivo csv formatado.",
+            "itemtype": "method",
+            "name": "generateCSV",
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 488,
+            "description": "Descrição do método. Este método assíncrono tem como tem como objetivo o autoScroll da página web.",
+            "itemtype": "method",
+            "name": "__autoScroll",
+            "params": [
+                {
+                    "name": "page",
+                    "description": "Objeto de navegação.",
+                    "type": "Object"
+                }
+            ],
+            "return": {
+                "description": "Este método retorna um determinado período e faz o scroll durante o mesmo.",
+                "type": "page.waitForTimeout"
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 517,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo 'montar' a configuração inicial do webcrawler.",
+            "itemtype": "method",
+            "name": "scrapProfile",
+            "params": [
+                {
+                    "name": "slug",
+                    "description": "Objeto de configuração",
+                    "type": "Object"
+                }
+            ],
+            "return": {
+                "description": "Este método retorna a imagem em um vetor e dois modelos já predeterminado do perfil.",
+                "type": "JSON"
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 563,
+            "description": "Descrição do método. Este método assíncrono tem como objetivo 'montar' a configuração inicial do webcrawler.",
+            "itemtype": "method",
+            "name": "listarArquivosDoDiretorio",
+            "params": [
+                {
+                    "name": "diretorio",
+                    "description": "Diretorio dos arquivos gerados.",
+                    "type": "Diretorio"
+                }
+            ],
+            "return": {
+                "description": "Este método retorna uma lista de arquivos em um array.",
+                "type": "Arquivos"
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 603,
+            "description": "Descrição do método. Este método assíncrono tem como salvar na pasta database as informações do usuário em um arquivo .json.",
+            "itemtype": "method",
+            "name": "saveContact",
+            "params": [
+                {
+                    "name": "String",
+                    "description": "Nome do usuário.",
+                    "type": "Name"
+                },
+                {
+                    "name": "JSON",
+                    "description": "Conteúdo em JSON.",
+                    "type": "Value"
+                }
+            ],
+            "return": {
+                "description": ""
+            },
+            "class": "init"
+        },
+        {
+            "file": "index.js",
+            "line": 633,
+            "description": "Descrição do método. Este método assíncrono tem objetivo 'montar' as conexões do usuário.",
+            "itemtype": "method",
+            "name": "loadContactConnectionsData",
+            "params": [
+                {
+                    "name": "page",
+                    "description": "Objeto de navegação.",
+                    "type": "Object"
+                }
+            ],
+            "return": {
+                "description": "Este método retorna um JSON contendo as conexões do usuário formatado .",
+                "type": "Contacts"
+            },
+            "class": "init"
+        }
+    ],
+    "warnings": []
+}
